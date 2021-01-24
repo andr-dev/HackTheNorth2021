@@ -93,7 +93,7 @@ class Calculator:
                 self.time_window.append(TW(window_name))
             else:
                 if window_name == self.last_window_name and self.time_window[len(self.time_window) - 1].can_be_updated():
-                    self.time_window[len(self.time_window) - 1].update_TW()
+                    self.time_window[len(self.time_window) - 1].update_time_window()
                 else:
                     self.time_window[len(self.time_window) - 1].finalize()
                     self.time_window.append(TW(window_name))

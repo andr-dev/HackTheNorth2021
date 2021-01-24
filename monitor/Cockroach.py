@@ -47,8 +47,6 @@ class CRDB:
             print("get_group_tracking_data(): status message: %s", cur.statusmessage)
             rows = cur.fetchall()
             self.conn.commit()
-            for row in rows:
-                print(row)
             return rows
 
     def add_to_group(self, groupid, userid):
@@ -110,6 +108,11 @@ class CRDB:
             rows = cur.fetchall()
             self.conn.commit()
             return rows[0][0]
+
+    def get_users(self):
+        with self.conn.cursor() as cur:
+            cur.execute("SELECT andr_users.user_id, andr_users.name FROM andr_users")
+            self.conn.commit()
 
 
 

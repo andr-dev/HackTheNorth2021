@@ -1,0 +1,11 @@
+{
+  "account":{
+    "name": "James",
+    "timezone": "EST",
+    "user_id": "dc8448c4-583c-11eb-a227-8c8caa42b62e",
+    "avatar": "./assets/avatar.png"
+  },
+  "settings":{
+    "mouse_timeout": 300
+  }
+}

@@ -8,6 +8,7 @@ from PyQt5.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont, QFont
 from PyQt5.QtWidgets import *
 from PyQt5.QtChart import QChart, QChartView, QBarSet, QPercentBarSeries, QBarCategoryAxis, QBarSeries
 
+from analysis.Analysis import Analysis
 from ui_main import Ui_MainWindow
 from monitor.Monitor import Monitor
 from monitor.Cockroach import CRDB
@@ -30,16 +31,43 @@ class MainWindow(QMainWindow):
         self.initialize_db()
         self.show()
 
+        self.ui.comboBox.addItem("Student")
+        self.ui.comboBox.addItem("Employee")
+        self.ui.comboBox.addItem("Manager")
+        self.ui.comboBox.addItem("CEO")
+
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap("./assets/user (1).svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.ui.profileButton.setIcon(icon)
+
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(QtGui.QPixmap("./assets/settings (1).svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.ui.settingsButton.setIcon(icon1)
+
+        icon2 = QtGui.QIcon()
+        icon2.addPixmap(QtGui.QPixmap("./assets/zap (1).svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.ui.productivityButton.setIcon(icon2)
+
+        icon3 = QtGui.QIcon()
+        icon3.addPixmap(QtGui.QPixmap("./assets/trending-up (1).svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.ui.summaryButton.setIcon(icon3)
+
         self.update_styles()
 
         self.create_settings()
         self.create_summary()
+        self.create_productivity()
 
         self.monitor = Monitor(self.config['settings']['mouse_timeout'])
         self.timer = QTimer()
         self.timer.setInterval(1000)
         self.timer.timeout.connect(self.run_monitor)
         self.timer.start()
+
+        self.timer2 = QTimer()
+        self.timer2.setInterval(5000)
+        self.timer2.timeout.connect(self.update_stack)
+        self.timer2.start()
 
     def create_settings(self):
         if self.ui.settingsCreateGroupTimezoneComboBox.count() == 0:
@@ -70,8 +98,6 @@ class MainWindow(QMainWindow):
     def create_summary(self):
         set0 = QBarSet("data")
 
-        # set0 << 1 << 2 << 3 << 4 << 5 << 6 << 7
-        # print(set0)
         set0.append(1)
         set0.append(2)
 
@@ -96,11 +122,33 @@ class MainWindow(QMainWindow):
 
         self.ui.summaryChartLayout.addWidget(chartView)
 
+    def update_stack(self):
+        self.create_productivity();
+
+    def create_productivity(self):
+        if self.ui.settingsCurrentGroupLabel.text() != "":
+            data = self.db.get_group_tracking_data(self.ui.settingsCurrentGroupLabel.text())
+            raw_data = Analysis.sort(Analysis.time_sum(Analysis.find(data, ['Skype.exe', 'chrome.exe', "WINWORD.EXE"])))
+            rankings = Analysis.convert_time_dict(raw_data)
+            self.ui.rankingListName.clear()
+            self.ui.rankingListScore.clear()
+            count = 1
+            for user in rankings.keys():
+                self.ui.rankingListName.addItem(str(count) + ") " + user)
+                count += 1
+            for time in rankings.values():
+                self.ui.rankingListScore.addItem(str(time))
+
+            self.ui.label_9.setText(rankings[self.db.name])
+            rankings[self.db.name] = 0
+            print(raw_data)
+            self.ui.label_10.setText(Analysis.get_average(raw_data))
+
     def update_styles(self):
         #background-color: rgb(198, 161, 106);
         #background-color: rgb(198, 161, 106);
         #border: 0px;
-        flatButtonStyle = "QPushButton{border-color: rgb(0, 0, 0);\nbackground-color: #b2c2a5;\ncolor: rgb(255, 255, 255);\nborder-radius: 8px;\npadding: 8;\ntransition: 0.3s;}QPushButton:hover{border-color: rgb(0, 0, 0);\nbackground-color:rgb(255, 255, 255);\ncolor:  rgb(123, 139, 111);\nborder-radius: 8px;\npadding: 8;}"
+        flatButtonStyle = "QPushButton{border-color: rgb(0, 0, 0);\nbackground-color: #b2c2a5;\ncolor: rgb(255, 255, 255);\nborder-radius: 8px;\npadding: 8;\ntransition: 0.3s;}QPushButton:hover{border-color: rgb(0, 0, 0);\nbackground-color:#a2b2b5;\ncolor:  rgb(123, 139, 111);\nborder-radius: 8px;\npadding: 8;}"
         self.ui.sidebar.setStyleSheet(flatButtonStyle)
 
     def settings_group_item_clicked(self, item=None):
@@ -115,6 +163,7 @@ class MainWindow(QMainWindow):
             for i in range(len(members)):
                 self.ui.settingsMemberList.addItem(members[i])
             self.ui.timeZoneLabel.setText(self.db.get_group_timezone(item.text()))
+            self.create_productivity()
 
     def run_monitor(self):
         res = self.monitor.update_time_window()
